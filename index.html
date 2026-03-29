@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lea's Sunny Spot</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sun:      #E8850A;
+  --sun-lt:   #F7C24E;
+  --green:    #3D8B5E;
+  --green-lt: #6AB98A;
+  --cream:    #FDF8EF;
+  --card:     #FFFFFF;
+  --text:     #2C2416;
+  --muted:    rgba(44,36,22,0.45);
+  --border:   rgba(44,36,22,0.1);
+  --panel:    #FFFBF3;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0 max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 60px) max(16px, env(safe-area-inset-left));
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(107,185,138,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 0%, rgba(247,194,78,0.15) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { max-width: 460px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* ── Header ── */
+header { text-align: center; padding: 36px 0 24px; }
+.tulip-wrap { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+header h1 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 2.1rem; letter-spacing: -0.02em; color: var(--text); line-height: 1.1; }
+header h1 em { font-style: italic; font-weight: 500; color: var(--sun); }
+header .tagline { margin-top: 7px; font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── API Setup panel ── */
+#setupPanel {
+  background: var(--panel);
+  border: 1.5px solid rgba(61,139,94,0.25);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 16px rgba(44,36,22,0.06);
+}
+
+.setup-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+
+.setup-title {
+  font-size: 0.78rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--green);
+}
+
+.setup-status {
+  font-size: 0.72rem; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+
+.setup-chevron {
+  font-size: 0.7rem; color: var(--muted);
+  transition: transform 0.2s;
+}
+.setup-chevron.open { transform: rotate(180deg); }
+
+.setup-body { display: none; margin-top: 14px; }
+.setup-body.open { display: block; }
+
+.setup-field { margin-bottom: 12px; }
+.setup-label {
+  font-size: 0.74rem; color: var(--muted);
+  margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
+}
+.setup-label .pill {
+  font-size: 0.65rem; padding: 1px 6px;
+  border-radius: 20px; font-weight: 500;
+}
+.pill-active { background: rgba(61,139,94,0.15); color: var(--green); }
+.pill-inactive { background: rgba(44,36,22,0.08); color: var(--muted); }
+
+.setup-input {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 300;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.setup-input:focus { border-color: var(--green); }
+.setup-input::placeholder { color: var(--muted); font-size: 0.78rem; }
+
+.setup-note { font-size: 0.71rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+.setup-save {
+  width: 100%; margin-top: 4px; padding: 10px;
+  background: var(--green);
+  border: none; border-radius: 10px;
+  color: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 500;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  cursor: pointer; -webkit-appearance: none;
+  transition: opacity 0.15s;
+}
+.setup-save:hover { opacity: 0.88; }
+
+/* Usage meters */
+.usage-meters {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.usage-row { display: flex; flex-direction: column; gap: 4px; }
+.usage-header { display: flex; justify-content: space-between; align-items: baseline; }
+.usage-label { font-size: 0.72rem; color: var(--muted); }
+.usage-count { font-size: 0.72rem; font-weight: 500; }
+.usage-count.safe   { color: var(--green); }
+.usage-count.warn   { color: var(--sun); }
+.usage-count.danger { color: #c0553a; }
+.usage-bar-track {
+  height: 4px; border-radius: 4px;
+  background: rgba(44,36,22,0.08);
+  overflow: hidden;
+}
+.usage-bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.usage-bar-fill.safe   { background: var(--green-lt); }
+.usage-bar-fill.warn   { background: var(--sun); }
+.usage-bar-fill.danger { background: #c0553a; }
+.usage-reset { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Main panel ── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px; padding: 18px; margin-bottom: 14px;
+  box-shadow: 0 2px 16px rgba(44,36,22,0.06);
+}
+
+.loc-row { display: flex; gap: 10px; margin-bottom: 14px; position: relative; }
+.loc-wrap { flex: 1; position: relative; }
+
+#locInput {
+  width: 100%; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 13px 14px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 300;
+  outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+}
+#locInput:focus { border-color: var(--green); }
+#locInput::placeholder { color: var(--muted); }
+
+#dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--card); border: 1.5px solid rgba(61,139,94,0.3);
+  border-radius: 12px; z-index: 200; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(44,36,22,0.12);
+}
+#dropdown.open { display: block; }
+.dd-item { padding: 12px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.dd-item:last-child { border-bottom: none; }
+.dd-item:hover, .dd-item:active { background: rgba(61,139,94,0.08); }
+.dd-item .d1 { font-size: 0.88rem; line-height: 1.3; color: var(--text); }
+.dd-item .d2 { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+
+.gps-btn {
+  width: 48px; height: 48px; background: rgba(61,139,94,0.1);
+  border: 1.5px solid rgba(61,139,94,0.3); border-radius: 12px;
+  font-size: 1.2rem; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; -webkit-appearance: none; color: var(--text);
+}
+.gps-btn:hover { background: rgba(61,139,94,0.18); }
+
+.filter-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.filter-label { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.toggle-wrap { display: flex; gap: 6px; flex: 1; }
+.toggle-btn {
+  flex: 1; padding: 7px 0; background: rgba(44,36,22,0.04);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 0.74rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.04em; cursor: pointer; -webkit-appearance: none; transition: all 0.15s;
+}
+.toggle-btn.on { background: rgba(61,139,94,0.12); border-color: rgba(61,139,94,0.4); color: var(--green); }
+
+.time-row { display: flex; align-items: center; gap: 10px; }
+.time-label { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.time-val { font-size: 1rem; font-weight: 500; color: var(--sun); min-width: 46px; text-align: center; }
+.tbtn {
+  width: 48px; height: 48px; background: rgba(44,36,22,0.04);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  color: var(--text); font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-appearance: none; transition: background 0.15s; flex-shrink: 0; line-height: 1;
+}
+.tbtn:hover { background: rgba(232,133,10,0.1); border-color: rgba(232,133,10,0.3); }
+.now-btn { font-size: 0.7rem; padding: 4px 12px; width: auto; height: 48px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.now-btn.on { color: var(--sun); border-color: rgba(232,133,10,0.35); background: rgba(232,133,10,0.08); }
+
+#searchBtn {
+  width: 100%; margin-top: 14px; padding: 15px;
+  background: linear-gradient(135deg, var(--green) 0%, #4fa870 100%);
+  border: none; border-radius: 12px; color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; -webkit-appearance: none;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(61,139,94,0.3);
+}
+#searchBtn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+#searchBtn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+#searchBtn.loading { opacity: 0.6; cursor: not-allowed; animation: btnPulse 1.4s ease-in-out infinite; box-shadow: none; }
+@keyframes btnPulse { 0%,100%{opacity:0.6} 50%{opacity:0.35} }
+
+/* ── Info / status ── */
+#infoBar { display: none; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 13px 15px; margin-bottom: 14px; box-shadow: 0 1px 8px rgba(44,36,22,0.05); }
+#infoBar.on { display: block; }
+.info-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--muted); }
+.info-row + .info-row { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.info-row strong { color: var(--sun); }
+
+#statusBox { display: none; text-align: center; padding: 36px 16px; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+#statusBox.on { display: block; }
+#statusBox .ico { font-size: 2rem; display: block; margin-bottom: 10px; }
+
+.loading-steps { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; text-align: left; max-width: 280px; margin-left: auto; margin-right: auto; }
+.load-step { display: flex; align-items: center; gap: 10px; font-size: 0.83rem; color: rgba(44,36,22,0.25); transition: color 0.3s; }
+.load-step.active { color: var(--text); }
+.load-step.done   { color: var(--muted); }
+.step-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+.step-spinner { width: 14px; height: 14px; border: 2px solid rgba(61,139,94,0.2); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.timeout-warn { margin-top: 14px; font-size: 0.78rem; color: var(--sun); display: none; }
+.timeout-warn.on { display: block; }
+
+/* ── Results ── */
+#resHeader { display: none; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+#resHeader.on { display: flex; }
+#resHeader h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
+#resHeader .header-right { display: flex; align-items: center; gap: 8px; }
+#resHeader span { font-size: 0.76rem; color: var(--muted); }
+
+.info-btn {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(61,139,94,0.12); border: 1.5px solid rgba(61,139,94,0.3);
+  color: var(--green); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.info-btn:hover { background: rgba(61,139,94,0.22); }
+
+#scoreExplain { display: none; background: var(--panel); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 8px rgba(44,36,22,0.05); animation: up 0.2s ease both; }
+#scoreExplain.on { display: block; }
+.explain-title { font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 12px; }
+.band { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 10px; }
+.band:last-of-type { margin-bottom: 14px; }
+.band-score { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; position: relative; }
+.band-text { flex: 1; }
+.band-label { font-size: 0.84rem; font-weight: 500; margin-bottom: 2px; }
+.band-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+.explain-factors { border-top: 1px solid var(--border); padding-top: 12px; font-size: 0.76rem; color: var(--muted); line-height: 1.6; }
+.explain-factors strong { color: var(--text); font-weight: 500; }
+
+.legend { display: flex; gap: 14px; font-size: 0.72rem; color: var(--muted); margin-bottom: 14px; flex-wrap: wrap; }
+.legend span { display: flex; align-items: center; gap: 4px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 16px;
+  padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
+  text-decoration: none; color: inherit; transition: border-color 0.2s, box-shadow 0.2s;
+  animation: up 0.3s ease both; position: relative; overflow: hidden;
+  box-shadow: 0 1px 6px rgba(44,36,22,0.05);
+}
+.card:hover { border-color: rgba(61,139,94,0.4); box-shadow: 0 4px 16px rgba(44,36,22,0.1); }
+.card.closed { opacity: 0.5; }
+.card.closed::after { content:'CLOSED'; position:absolute; top:10px; right:10px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; color:var(--muted); background:rgba(44,36,22,0.06); border-radius:4px; padding:2px 6px; }
+.card.unconfirmed { border-style: dashed; }
+@keyframes up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.score-wrap { width: 50px; height: 50px; flex-shrink: 0; position: relative; }
+.score-wrap svg { width: 50px; height: 50px; transform: rotate(-90deg); }
+.score-wrap .tr { fill: none; stroke: rgba(44,36,22,0.07); stroke-width: 4; }
+.score-wrap .fi { fill: none; stroke-width: 4; stroke-linecap: round; }
+.score-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 600; color: var(--text); }
+
+.vinfo { flex: 1; min-width: 0; }
+.vname { font-size: 0.98rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: var(--text); }
+.vmeta { font-size: 0.76rem; color: var(--muted); display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.vtag  { background: rgba(44,36,22,0.06); border-radius: 5px; padding: 2px 7px; text-transform: capitalize; }
+.vsun  { color: var(--sun); font-size: 0.74rem; }
+.vcloudy { color: #7a96aa; font-size: 0.74rem; }
+.vopen { color: var(--green); font-size: 0.74rem; font-weight: 500; }
+.vclosed-tag { color: var(--muted); font-size: 0.74rem; }
+.vconfirmed { color: var(--green); font-size: 0.72rem; }
+.vlikely { color: var(--muted); font-size: 0.72rem; font-style: italic; }
+.vrating { color: var(--sun); font-size: 0.72rem; }
+
+.sun-window { margin-top: 8px; background: rgba(44,36,22,0.06); border-radius: 6px; height: 5px; overflow: hidden; position: relative; }
+.sun-window-fill { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg,var(--sun),var(--sun-lt)); border-radius: 6px; }
+.sun-window-label { margin-top: 5px; font-size: 0.72rem; color: var(--muted); }
+.sun-window-label strong { color: var(--text); }
+
+.shadow-bar { margin-top: 6px; padding: 5px 8px; background: rgba(192,85,58,0.07); border: 1px solid rgba(192,85,58,0.18); border-radius: 6px; font-size: 0.72rem; color: #c0553a; }
+
+.go { width: 34px; height: 34px; background: rgba(61,139,94,0.1); border: 1.5px solid rgba(61,139,94,0.25); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; color: var(--green); }
+
+#toast { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 20px)); left: 50%; transform: translateX(-50%) translateY(70px); background: #b03a2e; color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 0.84rem; max-width: 320px; text-align: center; transition: transform 0.3s; z-index: 999; pointer-events: none; }
+#toast.on { transform: translateX(-50%) translateY(0); }
+
+.footer { text-align: center; font-size: 0.7rem; color: var(--muted); opacity: 0.5; margin-top: 36px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="tulip-wrap">
+      <svg width="36" height="60" viewBox="0 0 36 60" fill="none"><line x1="18" y1="60" x2="18" y2="28" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/><path d="M18 28 Q14 20 10 14 Q8 8 12 5 Q16 3 18 10 Q20 3 24 5 Q28 8 26 14 Q22 20 18 28Z" fill="#E8850A"/><path d="M12 38 Q10 34 14 32 Q18 30 18 34" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <svg width="36" height="68" viewBox="0 0 36 68" fill="none"><line x1="18" y1="68" x2="18" y2="32" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/><path d="M18 32 Q14 22 10 16 Q8 9 13 6 Q17 4 18 12 Q19 4 23 6 Q28 9 26 16 Q22 22 18 32Z" fill="#F7C24E"/><path d="M16 44 Q13 40 17 37 Q21 35 21 40" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <svg width="36" height="60" viewBox="0 0 36 60" fill="none"><line x1="18" y1="60" x2="18" y2="28" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/><path d="M18 28 Q14 20 10 14 Q8 8 12 5 Q16 3 18 10 Q20 3 24 5 Q28 8 26 14 Q22 20 18 28Z" fill="#6AB98A"/><path d="M22 38 Q24 34 20 32 Q16 30 17 34" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    </div>
+    <h1>Lea's <em>Sunny Spot</em></h1>
+    <p class="tagline">Bars &amp; cafés with outdoor seating in the sun</p>
+  </header>
+
+  <!-- API Setup (collapsible, shown only when needed) -->
+  <div id="setupPanel">
+    <div class="setup-header" id="setupToggle">
+      <span class="setup-title">⚙️ API Keys</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="setup-status" id="setupStatus"></span>
+        <span class="setup-chevron" id="setupChevron">▼</span>
+      </div>
+    </div>
+    <div class="setup-body" id="setupBody">
+      <div class="setup-field">
+        <div class="setup-label">
+          Google Places API Key
+          <span class="pill" id="googlePill">not set</span>
+        </div>
+        <input class="setup-input" id="googleKeyInput" type="text" placeholder="AIzaSy…" autocomplete="off" spellcheck="false">
+        <div class="setup-note">Enables better venue data, live opening hours &amp; ratings. Get a free key at console.cloud.google.com</div>
+      </div>
+      <div class="setup-field">
+        <div class="setup-label">
+          Mapbox Token
+          <span class="pill" id="mapboxPill">not set</span>
+        </div>
+        <input class="setup-input" id="mapboxKeyInput" type="text" placeholder="pk.eyJ1…" autocomplete="off" spellcheck="false">
+        <div class="setup-note">Enables real building heights for more accurate shadow modelling. Free at mapbox.com</div>
+      </div>
+      <button class="setup-save" id="setupSave">Save Keys</button>
+
+      <!-- Usage meters — only shown when keys are active -->
+      <div class="usage-meters" id="usageMeters" style="display:none">
+        <div class="usage-row" id="googleUsageRow">
+          <div class="usage-header">
+            <span class="usage-label">Google Places this month</span>
+            <span class="usage-count" id="googleUsageCount">0 / 800</span>
+          </div>
+          <div class="usage-bar-track"><div class="usage-bar-fill safe" id="googleUsageBar" style="width:0%"></div></div>
+          <div class="usage-reset" id="googleUsageReset"></div>
+        </div>
+        <div class="usage-row" id="mapboxUsageRow">
+          <div class="usage-header">
+            <span class="usage-label">Mapbox Tilequery this month</span>
+            <span class="usage-count" id="mapboxUsageCount">0 / 80,000</span>
+          </div>
+          <div class="usage-bar-track"><div class="usage-bar-fill safe" id="mapboxUsageBar" style="width:0%"></div></div>
+          <div class="usage-reset" id="mapboxUsageReset"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main search panel -->
+  <div class="panel">
+    <div class="loc-row">
+      <div class="loc-wrap">
+        <input id="locInput" type="text" inputmode="search" placeholder="Street address, neighbourhood, city…" autocomplete="off" spellcheck="false">
+        <div id="dropdown"></div>
+      </div>
+      <button class="gps-btn" id="gpsBtn" title="Use my location">📍</button>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-label">Show</span>
+      <div class="toggle-wrap">
+        <button class="toggle-btn on" id="filterAll">All venues</button>
+        <button class="toggle-btn"    id="filterOpen">Open now</button>
+      </div>
+    </div>
+
+    <div class="time-row">
+      <span class="time-label">Time</span>
+      <button class="tbtn" id="tMinus">−</button>
+      <span class="time-val" id="tVal">Now</span>
+      <button class="tbtn" id="tPlus">+</button>
+      <button class="tbtn now-btn on" id="tNow">Now</button>
+    </div>
+
+    <button id="searchBtn" disabled>Find Sunny Spots 🌷</button>
+  </div>
+
+  <div id="infoBar"></div>
+  <div id="statusBox"></div>
+
+  <div id="resHeader">
+    <h2>Sunny spots nearby</h2>
+    <div class="header-right">
+      <span id="resCount"></span>
+      <button class="info-btn" id="infoBtn">?</button>
+    </div>
+  </div>
+
+  <div id="scoreExplain">
+    <div class="explain-title">How the sunshine score works</div>
+    <div class="band">
+      <div class="band-score" style="background:rgba(232,133,10,0.15);color:#E8850A;">
+        <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;top:0;left:0;transform:rotate(-90deg)"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(232,133,10,0.15)" stroke-width="3"/><circle cx="18" cy="18" r="14" fill="none" stroke="#E8850A" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="8.8"/></svg>
+        <span style="position:relative">90</span>
+      </div>
+      <div class="band-text">
+        <div class="band-label" style="color:#E8850A;">☀️ Great sun · 75–100</div>
+        <div class="band-desc">High sun, terrace facing the right direction, clear skies. Go now.</div>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-score" style="background:rgba(247,194,78,0.15);color:#c49a00;">
+        <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;top:0;left:0;transform:rotate(-90deg)"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(247,194,78,0.15)" stroke-width="3"/><circle cx="18" cy="18" r="14" fill="none" stroke="#F7C24E" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="22"/></svg>
+        <span style="position:relative">65</span>
+      </div>
+      <div class="band-text">
+        <div class="band-label" style="color:#b08800;">🌤 Good sun · 55–74</div>
+        <div class="band-desc">Sun is up and the terrace is likely catching it. A solid choice.</div>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-score" style="background:rgba(106,185,138,0.15);color:#3D8B5E;">
+        <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;top:0;left:0;transform:rotate(-90deg)"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(106,185,138,0.15)" stroke-width="3"/><circle cx="18" cy="18" r="14" fill="none" stroke="#6AB98A" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="44"/></svg>
+        <span style="position:relative">45</span>
+      </div>
+      <div class="band-text">
+        <div class="band-label" style="color:#3D8B5E;">⛅ Partial sun · 35–54</div>
+        <div class="band-desc">Sun is lower or the direction isn't ideal. Could still be pleasant.</div>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-score" style="background:rgba(44,36,22,0.06);color:var(--muted);">
+        <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;top:0;left:0;transform:rotate(-90deg)"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(44,36,22,0.08)" stroke-width="3"/><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(44,36,22,0.2)" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="66"/></svg>
+        <span style="position:relative">20</span>
+      </div>
+      <div class="band-text">
+        <div class="band-label" style="color:var(--muted);">🌥 Low / No sun · 0–34</div>
+        <div class="band-desc">Sun is very low, heavily clouded, or building shadow likely. Nice spot — just not for sunshine.</div>
+      </div>
+    </div>
+    <div class="explain-factors">
+      The score combines <strong>how high the sun is</strong>, <strong>which direction it's coming from</strong> relative to the terrace, and <strong>live cloud cover</strong>. Nearby building heights are used to estimate shadows. Scores above 75 are shown on confirmed terraces only.
+    </div>
+  </div>
+
+  <div id="legend" style="display:none" class="legend">
+    <span>🪑 confirmed terrace</span>
+    <span style="font-style:italic;opacity:.6">🪑 likely terrace</span>
+    <span style="color:#c0553a">🏢 possible shadow</span>
+  </div>
+  <div id="resList"></div>
+
+  <div class="footer">
+    Sun scores factor solar geometry, cloud cover &amp; building shadows<br>
+    Venue data: Google Places or OpenStreetMap · Weather: Open-Meteo<br>
+    Made with 🌷 for Lea
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ── SunCalc ───────────────────────────────────────────────────────────────────
+var SunCalc=(function(){
+  var PI=Math.PI,sin=Math.sin,cos=Math.cos,tan=Math.tan,asin=Math.asin,atan=Math.atan2,
+      rad=PI/180,dayMs=864e5,J1970=2440588,J2000=2451545,e=rad*23.4397;
+  function toJ(d){return d.valueOf()/dayMs-0.5+J1970;}
+  function toD(d){return toJ(d)-J2000;}
+  function ra(l,b){return atan(sin(l)*cos(e)-tan(b)*sin(e),cos(l));}
+  function dec(l,b){return asin(sin(b)*cos(e)+cos(b)*sin(e)*sin(l));}
+  function az(H,p,d){return atan(sin(H),cos(H)*sin(p)-tan(d)*cos(p));}
+  function alt(H,p,d){return asin(sin(p)*sin(d)+cos(p)*cos(d)*cos(H));}
+  function lst(d,lw){return rad*(280.16+360.9856235*d)-lw;}
+  function sma(d){return rad*(357.5291+0.98560028*d);}
+  function ecl(M){return M+rad*(1.9148*sin(M)+0.02*sin(2*M)+0.0003*sin(3*M))+rad*102.9372+PI;}
+  function sc(d){var M=sma(d),L=ecl(M);return{dec:dec(L,0),ra:ra(L,0)};}
+  function getPos(date,lat,lng){
+    var lw=rad*-lng,phi=rad*lat,d=toD(date),c=sc(d),H=lst(d,lw)-c.ra;
+    return{azimuth:az(H,phi,c.dec),altitude:alt(H,phi,c.dec)};
+  }
+  function getSunEnd(from,lat,lng,minAlt){
+    minAlt=minAlt||3; var d=new Date(from.getTime());
+    for(var i=0;i<720;i++){d=new Date(d.getTime()+5*60000);if(getPos(d,lat,lng).altitude*180/PI<minAlt)return d;}
+    return null;
+  }
+  return{getPosition:getPos,getSunEndTime:getSunEnd};
+})();
+
+// ── Opening hours parser ──────────────────────────────────────────────────────
+var OpeningHours=(function(){
+  var DAYS=['su','mo','tu','we','th','fr','sa'];
+  function parseDayRange(str){
+    var days=[];str=str.toLowerCase().trim();
+    str.split(',').forEach(function(p){
+      p=p.trim();var dash=p.indexOf('-');
+      if(dash>0){
+        var f=DAYS.indexOf(p.slice(0,2)),t=DAYS.indexOf(p.slice(dash+1,dash+3));
+        if(f>=0&&t>=0){if(t>=f){for(var i=f;i<=t;i++)days.push(i);}else{for(var i=f;i<7;i++)days.push(i);for(var i=0;i<=t;i++)days.push(i);}}
+      }else{var idx=DAYS.indexOf(p.slice(0,2));if(idx>=0)days.push(idx);}
+    });
+    return days;
+  }
+  function parseTime(str){var p=str.trim().split(':');return parseInt(p[0])*60+(parseInt(p[1])||0);}
+  function check(ohStr,date){
+    if(!ohStr||!ohStr.trim())return{isOpen:null,closingTime:null,hasHours:false};
+    ohStr=ohStr.trim();
+    if(ohStr==='24/7')return{isOpen:true,closingTime:null,hasHours:true,allDay:true};
+    var dow=date.getDay(),nowMins=date.getHours()*60+date.getMinutes();
+    var result={isOpen:false,closingTime:null,hasHours:true};
+    ohStr.split(';').forEach(function(rule){
+      rule=rule.trim();if(!rule)return;
+      var isOff=/\boff\b|\bclosed\b/i.test(rule);
+      var times=rule.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/g);
+      var dayPart=rule.replace(/\d.*/,'').trim();
+      var appDays=dayPart?parseDayRange(dayPart):[0,1,2,3,4,5,6];
+      if(appDays.indexOf(dow)<0)return;
+      if(isOff){result.isOpen=false;result.closingTime=null;return;}
+      if(!times){result.isOpen=true;return;}
+      times.forEach(function(tm){
+        var p=tm.split('-'),open=parseTime(p[0]),close=parseTime(p[1]);
+        var overnight=close<open,inRange;
+        if(overnight){var isNextDay=(appDays.indexOf((dow+6)%7)>=0);inRange=(nowMins>=open)||(isNextDay&&nowMins<close);}
+        else{inRange=(nowMins>=open&&nowMins<close);}
+        if(inRange){result.isOpen=true;result.closingTime=p[1].trim();}
+      });
+    });
+    return result;
+  }
+  function fmt(t){return t?t.replace(/^(\d):/,'0$1:'):null;}
+  return{check:check,fmt:fmt};
+})();
+
+// ── Shadow model ──────────────────────────────────────────────────────────────
+var DEG=Math.PI/180;
+function ptSegDist(px,py,ax,ay,bx,by){
+  var dx=bx-ax,dy=by-ay,lenSq=dx*dx+dy*dy;
+  if(lenSq===0)return Math.sqrt((px-ax)**2+(py-ay)**2);
+  var t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/lenSq));
+  return Math.sqrt((px-(ax+t*dx))**2+(py-(ay+t*dy))**2);
+}
+function latToM(d){return d*111320;}
+function lonToM(d,lat){return d*111320*Math.cos(lat*DEG);}
+function checkShadow(vLat,vLon,sunAzDeg,sunAltDeg,buildings){
+  if(sunAltDeg<=0)return{inShadow:true,shadowSource:'night'};
+  if(sunAltDeg>60)return{inShadow:false,shadowSource:null};
+  var shadowDir=(sunAzDeg+180)%360,sunFromDeg=sunAzDeg;
+  for(var b=0;b<buildings.length;b++){
+    var bld=buildings[b];
+    var h=bld.heightM||(( bld.levels||3)*3.2);
+    var shadowLenM=h/Math.tan(sunAltDeg*DEG);
+    var bDx=lonToM(bld.lon-vLon,vLat),bDy=latToM(bld.lat-vLat);
+    var bDist=Math.sqrt(bDx*bDx+bDy*bDy);
+    if(bDist>shadowLenM+30)continue;
+    var angleToBld=(Math.atan2(bDx,bDy)/DEG+360)%360;
+    var angDiff=Math.abs(((angleToBld-sunFromDeg)+540)%360-180);
+    if(angDiff>60)continue;
+    var tipDx=bDx+shadowLenM*Math.sin(shadowDir*DEG),tipDy=bDy+shadowLenM*Math.cos(shadowDir*DEG);
+    var segDist=ptSegDist(0,0,bDx,bDy,tipDx,tipDy);
+    if(segDist<15&&bDist<shadowLenM)return{inShadow:true,shadowSource:bld.name||('~'+Math.round(bDist)+'m building')};
+  }
+  return{inShadow:false,shadowSource:null};
+}
+
+// ── Key management ────────────────────────────────────────────────────────────
+var GKEY='';   // Google Places API key
+var MKEY='';   // Mapbox token
+
+function loadKeys(){
+  try{
+    GKEY=localStorage.getItem('ssf_gkey')||'';
+    MKEY=localStorage.getItem('ssf_mkey')||'';
+  }catch(e){}
+}
+
+function saveKeys(){
+  try{
+    localStorage.setItem('ssf_gkey',GKEY);
+    localStorage.setItem('ssf_mkey',MKEY);
+  }catch(e){}
+}
+
+// ── Usage tracking ────────────────────────────────────────────────────────────
+var GOOGLE_WARN_LIMIT  = 800;    // warn at 800 — free tier ~1,100 calls/month
+var MAPBOX_WARN_LIMIT  = 80000;  // warn at 80k — free tier 100k/month
+
+function getMonthKey(){
+  var d=new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1);
+}
+
+function loadUsage(){
+  try{
+    var stored=JSON.parse(localStorage.getItem('ssf_usage')||'{}');
+    var month=getMonthKey();
+    // Reset if it's a new month
+    if(stored.month!==month) return{month:month,google:0,mapbox:0};
+    return stored;
+  }catch(e){return{month:getMonthKey(),google:0,mapbox:0};}
+}
+
+function saveUsage(usage){
+  try{localStorage.setItem('ssf_usage',JSON.stringify(usage));}catch(e){}
+}
+
+function trackGoogle(){
+  var u=loadUsage();u.google++;saveUsage(u);
+  checkUsageWarnings(u);
+  updateUsageUI(u);
+}
+
+function trackMapbox(){
+  var u=loadUsage();u.mapbox++;saveUsage(u);
+  checkUsageWarnings(u);
+  updateUsageUI(u);
+}
+
+function checkUsageWarnings(u){
+  if(u.google===Math.round(GOOGLE_WARN_LIMIT*0.8))
+    showToast('⚠️ Google Places: '+u.google+' searches used this month — approaching free limit.');
+  if(u.google>=GOOGLE_WARN_LIMIT)
+    showToast('🚨 Google Places limit reached ('+u.google+' searches). Costs may now apply — check console.cloud.google.com');
+  if(u.mapbox===Math.round(MAPBOX_WARN_LIMIT*0.8))
+    showToast('⚠️ Mapbox: '+u.mapbox.toLocaleString()+' calls used this month — approaching free limit.');
+  if(u.mapbox>=MAPBOX_WARN_LIMIT)
+    showToast('🚨 Mapbox limit reached ('+u.mapbox.toLocaleString()+' calls). Costs may now apply — check mapbox.com/account');
+}
+
+function usageClass(count,limit){
+  var pct=count/limit;
+  if(pct>=1)   return'danger';
+  if(pct>=0.8) return'warn';
+  return'safe';
+}
+
+function updateUsageUI(u){
+  var meters=document.getElementById('usageMeters');
+  if(!meters)return;
+  var showGoogle=hasGoogle(),showMapbox=hasMapbox();
+  meters.style.display=(showGoogle||showMapbox)?'flex':'none';
+
+  if(showGoogle){
+    var gPct=Math.min(100,Math.round((u.google/GOOGLE_WARN_LIMIT)*100));
+    var gClass=usageClass(u.google,GOOGLE_WARN_LIMIT);
+    var gCount=document.getElementById('googleUsageCount');
+    var gBar=document.getElementById('googleUsageBar');
+    var gReset=document.getElementById('googleUsageReset');
+    if(gCount){gCount.textContent=u.google+' / '+GOOGLE_WARN_LIMIT+' (warn threshold)';gCount.className='usage-count '+gClass;}
+    if(gBar){gBar.style.width=gPct+'%';gBar.className='usage-bar-fill '+gClass;}
+    if(gReset){gReset.textContent='Resets 1 '+new Date(new Date().getFullYear(),new Date().getMonth()+1,1).toLocaleString('en',{month:'long'});}
+  }
+
+  if(showMapbox){
+    var mPct=Math.min(100,Math.round((u.mapbox/MAPBOX_WARN_LIMIT)*100));
+    var mClass=usageClass(u.mapbox,MAPBOX_WARN_LIMIT);
+    var mCount=document.getElementById('mapboxUsageCount');
+    var mBar=document.getElementById('mapboxUsageBar');
+    var mReset=document.getElementById('mapboxUsageReset');
+    if(mCount){mCount.textContent=u.mapbox.toLocaleString()+' / '+MAPBOX_WARN_LIMIT.toLocaleString()+' (warn threshold)';mCount.className='usage-count '+mClass;}
+    if(mBar){mBar.style.width=mPct+'%';mBar.className='usage-bar-fill '+mClass;}
+    if(mReset){mReset.textContent='Resets 1 '+new Date(new Date().getFullYear(),new Date().getMonth()+1,1).toLocaleString('en',{month:'long'});}
+  }
+}
+
+function hasGoogle(){return GKEY.length>10;}
+function hasMapbox(){return MKEY.length>10;}
+
+// ── Setup panel UI ────────────────────────────────────────────────────────────
+var setupToggle=document.getElementById('setupToggle');
+var setupBody=document.getElementById('setupBody');
+var setupChevron=document.getElementById('setupChevron');
+var setupStatus=document.getElementById('setupStatus');
+var googleKeyInput=document.getElementById('googleKeyInput');
+var mapboxKeyInput=document.getElementById('mapboxKeyInput');
+var googlePill=document.getElementById('googlePill');
+var mapboxPill=document.getElementById('mapboxPill');
+var setupSave=document.getElementById('setupSave');
+
+function updateSetupUI(){
+  // Pills
+  if(hasGoogle()){
+    googlePill.textContent='active';googlePill.className='pill pill-active';
+  }else{
+    googlePill.textContent='not set';googlePill.className='pill pill-inactive';
+  }
+  if(hasMapbox()){
+    mapboxPill.textContent='active';mapboxPill.className='pill pill-active';
+  }else{
+    mapboxPill.textContent='not set';mapboxPill.className='pill pill-inactive';
+  }
+  // Status line
+  var parts=[];
+  if(hasGoogle()) parts.push('Google ✓');
+  if(hasMapbox()) parts.push('Mapbox ✓');
+  setupStatus.textContent=parts.length?parts.join(' · '):'no keys set';
+  // Pre-fill inputs with masked version if set
+  googleKeyInput.value=GKEY?GKEY:'';
+  mapboxKeyInput.value=MKEY?MKEY:'';
+  // Auto-collapse if both keys are set
+  if(hasGoogle()&&hasMapbox()){
+    setupBody.classList.remove('open');
+    setupChevron.classList.remove('open');
+  }
+  updateUsageUI(loadUsage());
+}
+
+setupToggle.onclick=function(){
+  var open=setupBody.classList.toggle('open');
+  setupChevron.classList.toggle('open',open);
+};
+
+setupSave.onclick=function(){
+  var gVal=googleKeyInput.value.trim();
+  var mVal=mapboxKeyInput.value.trim();
+  if(gVal) GKEY=gVal;
+  if(mVal) MKEY=mVal;
+  saveKeys();
+  updateSetupUI();
+  // Close panel
+  setupBody.classList.remove('open');
+  setupChevron.classList.remove('open');
+  showToast('Keys saved ✓');
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+var lat=null,lon=null,label='',hourOffset=0;
+var acResults=[],acTimer=null,weatherCache=null,filterOpenOnly=false;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+var locInput=document.getElementById('locInput'),dropdown=document.getElementById('dropdown'),
+    gpsBtn=document.getElementById('gpsBtn'),searchBtn=document.getElementById('searchBtn'),
+    tMinus=document.getElementById('tMinus'),tPlus=document.getElementById('tPlus'),
+    tNow=document.getElementById('tNow'),tVal=document.getElementById('tVal'),
+    infoBar=document.getElementById('infoBar'),statusBox=document.getElementById('statusBox'),
+    resHeader=document.getElementById('resHeader'),resCount=document.getElementById('resCount'),
+    resList=document.getElementById('resList'),toast=document.getElementById('toast'),
+    filterAll=document.getElementById('filterAll'),filterOpen=document.getElementById('filterOpen'),
+    legend=document.getElementById('legend'),infoBtn=document.getElementById('infoBtn'),
+    scoreExplain=document.getElementById('scoreExplain');
+
+infoBtn.onclick=function(){
+  var on=scoreExplain.classList.toggle('on');
+  infoBtn.textContent=on?'×':'?';
+  infoBtn.style.background=on?'rgba(61,139,94,0.22)':'';
+};
+filterAll.onclick=function(){filterOpenOnly=false;filterAll.classList.add('on');filterOpen.classList.remove('on');};
+filterOpen.onclick=function(){filterOpenOnly=true;filterOpen.classList.add('on');filterAll.classList.remove('on');};
+
+// ── Time ──────────────────────────────────────────────────────────────────────
+function pad(n){return n.toString().padStart(2,'0');}
+function updateTime(){
+  if(hourOffset===0){tVal.textContent='Now';tNow.classList.add('on');}
+  else{var d=new Date();d.setHours(d.getHours()+hourOffset);tVal.textContent=pad(d.getHours())+':'+pad(d.getMinutes());tNow.classList.remove('on');}
+}
+tMinus.onclick=function(){hourOffset=Math.max(-6,hourOffset-1);updateTime();};
+tPlus.onclick=function(){hourOffset=Math.min(12,hourOffset+1);updateTime();};
+tNow.onclick=function(){hourOffset=0;updateTime();};
+function getTargetDate(){var d=new Date();if(hourOffset!==0)d.setHours(d.getHours()+hourOffset);return d;}
+
+// ── Geocoding — Google or Nominatim ──────────────────────────────────────────
+function geocode(q,cb){
+  if(hasGoogle()){
+    // Google Places Autocomplete (New) — Text Search for autocomplete suggestions
+    fetch('https://places.googleapis.com/v1/places:autocomplete',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY},
+      body:JSON.stringify({input:q,languageCode:'en'})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      var suggestions=d.suggestions||[];
+      var results=suggestions.map(function(s){
+        var p=s.placePrediction||{};
+        return{
+          placeId:p.placeId,
+          main:(p.structuredFormat&&p.structuredFormat.mainText&&p.structuredFormat.mainText.text)||p.text&&p.text.text||'',
+          sub:(p.structuredFormat&&p.structuredFormat.secondaryText&&p.structuredFormat.secondaryText.text)||'',
+          full:p.text&&p.text.text||''
+        };
+      });
+      cb(results,'google');
+    }).catch(function(){nominatimGeocode(q,cb);});
+  } else {
+    nominatimGeocode(q,cb);
+  }
+}
+
+function nominatimGeocode(q,cb){
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&addressdetails=1&q='+encodeURIComponent(q),{headers:{'Accept-Language':'en'}})
+    .then(function(r){return r.json()}).then(function(res){cb(res,'nominatim');}).catch(function(){cb([],'nominatim');});
+}
+
+// Resolve a Google place ID to lat/lon
+function resolveGooglePlace(placeId,cb){
+  fetch('https://places.googleapis.com/v1/places/'+placeId+'?fields=location,displayName,formattedAddress',{
+    headers:{'X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'location,displayName,formattedAddress'}
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    cb({lat:d.location.latitude,lon:d.location.longitude,label:(d.displayName&&d.displayName.text||d.formattedAddress||'')});
+  }).catch(function(){cb(null);});
+}
+
+function fmtNominatim(r){
+  var a=r.address||{},specific='';
+  if(a.house_number&&a.road)specific=a.road+' '+a.house_number;
+  else if(a.road)specific=a.road;
+  else if(a.pub||a.cafe||a.bar)specific=a.pub||a.cafe||a.bar;
+  else if(a.neighbourhood||a.suburb)specific=a.neighbourhood||a.suburb;
+  else specific=r.display_name.split(',')[0];
+  var ctx=[];
+  if(a.city||a.town||a.village||a.municipality)ctx.push(a.city||a.town||a.village||a.municipality);
+  if(a.country)ctx.push(a.country);
+  return{main:specific,sub:ctx.join(', '),full:r.display_name,lat:parseFloat(r.lat),lon:parseFloat(r.lon)};
+}
+
+// ── Autocomplete ──────────────────────────────────────────────────────────────
+var acSource='nominatim';
+
+locInput.addEventListener('input',function(){
+  var q=locInput.value.trim();clearTimeout(acTimer);resetLocation();
+  if(q.length<3){closeDD();return;}
+  acTimer=setTimeout(function(){
+    geocode(q,function(res,source){acResults=res;acSource=source;renderDD(res,source);});
+  },350);
+});
+locInput.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&acResults.length){e.preventDefault();pickResult(0);}
+  if(e.key==='Escape')closeDD();
+});
+
+function renderDD(results,source){
+  if(!results.length){closeDD();return;}
+  var html='';
+  results.forEach(function(r,i){
+    var main,sub,full;
+    if(source==='google'){
+      main=r.main;sub=r.sub;full=r.full;
+    }else{
+      var f=fmtNominatim(r);main=f.main;sub=f.sub;full=f.full;
+    }
+    html+='<div class="dd-item" data-i="'+i+'"><div class="d1">'+esc(main)+(sub?' <span style="opacity:.45;font-size:.8em">'+esc(sub)+'</span>':'')+'</div><div class="d2">'+esc(truncate(full,64))+'</div></div>';
+  });
+  dropdown.innerHTML=html;dropdown.classList.add('open');
+  dropdown.querySelectorAll('.dd-item').forEach(function(el){
+    el.addEventListener('mousedown',function(e){e.preventDefault();pickResult(parseInt(el.getAttribute('data-i')));});
+    el.addEventListener('touchstart',function(e){e.preventDefault();pickResult(parseInt(el.getAttribute('data-i')));},{passive:false});
+  });
+}
+
+function pickResult(i){
+  var r=acResults[i];if(!r)return;
+  if(acSource==='google'&&r.placeId){
+    locInput.value=r.main+(r.sub?', '+r.sub:'');
+    closeDD();
+    resolveGooglePlace(r.placeId,function(res){
+      if(res){lat=res.lat;lon=res.lon;label=res.label||locInput.value;weatherCache=null;searchBtn.disabled=false;}
+      else{showToast('Could not resolve location — try typing again.');}
+    });
+  }else{
+    var f=fmtNominatim(r);
+    lat=f.lat;lon=f.lon;label=f.main+(f.sub?', '+f.sub:'');
+    locInput.value=label;weatherCache=null;closeDD();searchBtn.disabled=false;
+  }
+}
+
+function closeDD(){dropdown.classList.remove('open');dropdown.innerHTML='';}
+function resetLocation(){lat=null;lon=null;label='';searchBtn.disabled=true;weatherCache=null;}
+document.addEventListener('mousedown',function(e){if(!e.target.closest('.loc-wrap'))closeDD();});
+function truncate(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+
+// ── GPS ───────────────────────────────────────────────────────────────────────
+gpsBtn.onclick=function(){
+  if(!navigator.geolocation){showToast('Geolocation not supported');return;}
+  gpsBtn.textContent='⏳';
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      lat=pos.coords.latitude;lon=pos.coords.longitude;weatherCache=null;gpsBtn.textContent='✅';
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon)
+        .then(function(r){return r.json();})
+        .then(function(d){var a=d.address||{};label=(a.road||a.suburb||a.neighbourhood||a.city||a.town||'Your location');if(a.city||a.town)label+=', '+(a.city||a.town);locInput.value=label;})
+        .catch(function(){label='Your location';locInput.value=label;});
+      searchBtn.disabled=false;setTimeout(function(){gpsBtn.textContent='📍';},2500);
+    },
+    function(){gpsBtn.textContent='📍';showToast("Couldn't get GPS — please type an address.");},
+    {timeout:10000}
+  );
+};
+
+// ── Weather ───────────────────────────────────────────────────────────────────
+function wmoWeather(code,isDay){
+  if(code===0)return{emoji:isDay?'☀️':'🌙',label:'Clear sky'};
+  if(code===1)return{emoji:'🌤',label:'Mainly clear'};
+  if(code===2)return{emoji:'⛅',label:'Partly cloudy'};
+  if(code===3)return{emoji:'☁️',label:'Overcast'};
+  if(code<=49)return{emoji:'🌫',label:'Fog'};
+  if(code<=59)return{emoji:'🌦',label:'Drizzle'};
+  if(code<=69)return{emoji:'🌧',label:'Rain'};
+  if(code<=79)return{emoji:'🌨',label:'Snow'};
+  if(code<=82)return{emoji:'🌧',label:'Rain showers'};
+  if(code<=86)return{emoji:'🌨',label:'Snow showers'};
+  if(code<=99)return{emoji:'⛈',label:'Thunderstorm'};
+  return{emoji:'🌡',label:'Unknown'};
+}
+function fetchWeather(la,lo){
+  if(weatherCache&&Date.now()-weatherCache.ts<10*60*1000)return Promise.resolve(weatherCache);
+  return fetch('https://api.open-meteo.com/v1/forecast?latitude='+la.toFixed(4)+'&longitude='+lo.toFixed(4)+'&current=temperature_2m,cloud_cover,weather_code,is_day&forecast_days=1&timezone=auto')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var c=d.current||{},cloudPct=c.cloud_cover!=null?c.cloud_cover:50,code=c.weather_code!=null?c.weather_code:0,isDay=c.is_day!=null?c.is_day:1,temp=c.temperature_2m!=null?Math.round(c.temperature_2m):null,wmo=wmoWeather(code,isDay);
+      weatherCache={ts:Date.now(),cloudPct:cloudPct,code:code,label:wmo.label,emoji:wmo.emoji,temp:temp,isDay:isDay};
+      return weatherCache;
+    }).catch(function(){return{ts:Date.now(),cloudPct:null,code:0,label:null,emoji:null,temp:null,isDay:1};});
+}
+function cloudMultiplier(c){if(c==null)return 1;if(c<=20)return 1;if(c<=40)return 0.85;if(c<=60)return 0.65;if(c<=80)return 0.4;return 0.15;}
+
+// ── Sun score ─────────────────────────────────────────────────────────────────
+function sunScore(altDeg,sunAz,venueBearing,cloudPct,shadowPenalty){
+  if(altDeg<0)return 0;
+  var altPts=altDeg>=30?70:altDeg>=15?50+(altDeg-15)*(20/15):altDeg*(50/15);
+  var diff=Math.abs(((venueBearing-sunAz)+540)%360-180);
+  var azPts=Math.max(0,30*(1-diff/120));
+  var raw=(altPts+azPts)*cloudMultiplier(cloudPct);
+  if(shadowPenalty)raw*=0.25;
+  return Math.min(100,Math.round(raw));
+}
+function scoreColor(s){if(s>=65)return'#E8850A';if(s>=35)return'#d4922a';return'rgba(44,36,22,0.15)';}
+function scoreLabel(s){if(s>=75)return'☀️ Great';if(s>=55)return'🌤 Good';if(s>=35)return'⛅ Partial';return'';}
+function azToCompass(az){return['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8];}
+
+// ── Sun window ────────────────────────────────────────────────────────────────
+function calcSunWindow(fromDate,la,lo){
+  var pos=SunCalc.getPosition(fromDate,la,lo);
+  if(pos.altitude*180/Math.PI<3)return{minutesLeft:0,label:'No sun now'};
+  var end=SunCalc.getSunEndTime(fromDate,la,lo,3);
+  if(!end)return{minutesLeft:999,label:'All day'};
+  var mins=Math.round((end-fromDate)/60000);
+  return{minutesLeft:mins,label:'Sun until '+pad(end.getHours())+':'+pad(end.getMinutes())};
+}
+function sunWindowPct(m){if(m>=999)return 100;return Math.min(100,Math.round(m/360*100));}
+
+// ── Google Places venue fetch ─────────────────────────────────────────────────
+function fetchGoogleVenues(la,lo){
+  var cKey='ssf7g_'+Math.round(la*100)+'_'+Math.round(lo*100);
+  try{var c=JSON.parse(localStorage.getItem(cKey)||'null');if(c&&Date.now()-c.ts<15*60*1000)return Promise.resolve(c.data);}catch(e){}
+
+  // Nearby Search (New) for bars + cafes
+  var body=JSON.stringify({
+    includedTypes:['bar','cafe'],
+    maxResultCount:20,
+    locationRestriction:{circle:{center:{latitude:la,longitude:lo},radius:1200}},
+    languageCode:'en'
+  });
+
+  return fetch('https://places.googleapis.com/v1/places:searchNearby',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Goog-Api-Key':GKEY,
+      'X-Goog-FieldMask':'places.id,places.displayName,places.location,places.types,places.rating,places.userRatingCount,places.regularOpeningHours,places.outdoorSeating,places.servesBeer,places.servesCoffee'
+    },
+    body:body
+  }).then(function(r){
+    if(!r.ok)throw new Error('Google Places error '+r.status);
+    return r.json();
+  }).then(function(d){
+    trackGoogle();
+    var places=d.places||[];
+    try{localStorage.setItem(cKey,JSON.stringify({ts:Date.now(),data:places}));}catch(e){}
+    return places;
+  });
+}
+
+// ── Mapbox building heights ───────────────────────────────────────────────────
+// Query Mapbox Tilequery for buildings within radius and get actual height in metres
+function fetchMapboxBuildings(la,lo){
+  var cKey='ssf7m_'+Math.round(la*1000)+'_'+Math.round(lo*1000);
+  try{var c=JSON.parse(localStorage.getItem(cKey)||'null');if(c&&Date.now()-c.ts<60*60*1000)return Promise.resolve(c.data);}catch(e){}
+
+  // Tilequery on mapbox-streets-v8 for buildings within 150m
+  var url='https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/'+
+    lo.toFixed(6)+','+la.toFixed(6)+
+    '.json?radius=150&limit=50&layers=building&access_token='+MKEY;
+
+  return fetch(url)
+    .then(function(r){if(!r.ok)throw new Error('Mapbox error');return r.json();})
+    .then(function(d){
+      trackMapbox();
+      var features=d.features||[];
+      var buildings=features.map(function(f){
+        var props=f.properties||{};
+        var geom=f.geometry;
+        var bLat=la,bLon=lo; // fallback to search point
+        if(geom&&geom.type==='Point'){bLon=geom.coordinates[0];bLat=geom.coordinates[1];}
+        // Mapbox Streets v8 building layer has 'height' in metres
+        var heightM=props.height||null;
+        var levels=props['building:levels']||null;
+        return{lat:bLat,lon:bLon,heightM:heightM,levels:levels,name:props.name||null};
+      }).filter(function(b){return b.heightM||b.levels;});
+      try{localStorage.setItem(cKey,JSON.stringify({ts:Date.now(),data:buildings}));}catch(e){}
+      return buildings;
+    });
+}
+
+// ── OSM Overpass fallback ─────────────────────────────────────────────────────
+var MIRRORS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+
+function buildOverpassQuery(la,lo){
+  return '[out:json][timeout:30];\n(\n'+
+    '  node["amenity"="bar"]["outdoor_seating"="yes"](around:1200,'+la+','+lo+');\n'+
+    '  node["amenity"="cafe"]["outdoor_seating"="yes"](around:1200,'+la+','+lo+');\n'+
+    '  way["amenity"="bar"]["outdoor_seating"="yes"](around:1200,'+la+','+lo+');\n'+
+    '  way["amenity"="cafe"]["outdoor_seating"="yes"](around:1200,'+la+','+lo+');\n'+
+    '  node["amenity"="bar"][!"outdoor_seating"](around:1000,'+la+','+lo+');\n'+
+    '  node["amenity"="cafe"][!"outdoor_seating"](around:1000,'+la+','+lo+');\n'+
+    '  way["amenity"="bar"][!"outdoor_seating"](around:1000,'+la+','+lo+');\n'+
+    '  way["amenity"="cafe"][!"outdoor_seating"](around:1000,'+la+','+lo+');\n'+
+    '  way["building"](around:150,'+la+','+lo+');\n'+
+    '  relation["building"](around:150,'+la+','+lo+');\n'+
+    ');\nout center tags;';
+}
+
+function fetchOSMVenues(la,lo){
+  var cKey='ssf7o_'+Math.round(la*100)+'_'+Math.round(lo*100);
+  try{var c=JSON.parse(localStorage.getItem(cKey)||'null');if(c&&Date.now()-c.ts<15*60*1000)return Promise.resolve(c.data);}catch(e){}
+  var body='data='+encodeURIComponent(buildOverpassQuery(la,lo));
+  var promises=MIRRORS.map(function(url){
+    return fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){if(!r.ok)throw new Error();return r.json();})
+      .then(function(d){try{localStorage.setItem(cKey,JSON.stringify({ts:Date.now(),data:d.elements}));}catch(e){}return d.elements;});
+  });
+  return Promise.any(promises);
+}
+
+// ── Geo helpers ───────────────────────────────────────────────────────────────
+function haversine(la1,lo1,la2,lo2){var R=6371000,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;var a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function bearing(la1,lo1,la2,lo2){var dLo=(lo2-lo1)*Math.PI/180,y=Math.sin(dLo)*Math.cos(la2*Math.PI/180),x=Math.cos(la1*Math.PI/180)*Math.sin(la2*Math.PI/180)-Math.sin(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.cos(dLo);return(Math.atan2(y,x)*180/Math.PI+360)%360;}
+function fmtDist(m){return m<1000?Math.round(m/10)*10+'m':(m/1000).toFixed(1)+'km';}
+
+// ── Parse Google opening hours ────────────────────────────────────────────────
+function parseGoogleHours(place,date){
+  var oh=place.regularOpeningHours;
+  if(!oh)return{isOpen:null,closingTime:null,hasHours:false};
+  // Google returns openNow boolean directly
+  var isOpen=oh.openNow!=null?oh.openNow:null;
+  // Try to extract closing time for today from periods
+  var closingTime=null;
+  if(oh.periods&&oh.periods.length){
+    var dow=date.getDay();
+    oh.periods.forEach(function(p){
+      if(p.open&&p.open.day===dow&&p.close){
+        closingTime=pad(p.close.hour)+':'+pad(p.close.minute);
+      }
+    });
+  }
+  return{isOpen:isOpen,closingTime:closingTime,hasHours:true};
+}
+
+// ── Render card ───────────────────────────────────────────────────────────────
+function renderCard(v,i){
+  var circ=2*Math.PI*20,offset=circ*(1-v.score/100);
+  var col=scoreColor(v.score),lbl=scoreLabel(v.score);
+  var gmUrl='https://www.google.com/maps/dir/?api=1&destination='+v.lat+','+v.lon;
+
+  var confTag=v.confirmed?'<span class="vconfirmed">🪑 confirmed terrace</span>':'<span class="vlikely">🪑 likely terrace</span>';
+
+  var hoursTag='';
+  if(v.ohResult.hasHours){
+    if(v.ohResult.allDay)hoursTag='<span class="vopen">Open 24/7</span>';
+    else if(v.ohResult.isOpen)hoursTag='<span class="vopen">Open'+(v.ohResult.closingTime?' until '+v.ohResult.closingTime:'')+'</span>';
+    else if(v.ohResult.isOpen===false)hoursTag='<span class="vclosed-tag">Closed</span>';
+  }
+
+  var cloudTag=v.cloudPct!=null&&v.cloudPct>60?'<span class="vcloudy">☁️ '+Math.round(v.cloudPct)+'%</span>':'';
+
+  var ratingTag='';
+  if(v.rating)ratingTag='<span class="vrating">★ '+v.rating.toFixed(1)+(v.ratingCount?' ('+v.ratingCount+')':'')+'</span>';
+
+  var windowHtml='';
+  if(v.score>10&&v.sunWindow){
+    var pct=sunWindowPct(v.sunWindow.minutesLeft),winLabel=v.sunWindow.label;
+    if(v.sunWindow.minutesLeft<999&&v.sunWindow.minutesLeft>0){
+      var hrs=Math.floor(v.sunWindow.minutesLeft/60),mins=v.sunWindow.minutesLeft%60;
+      winLabel+=hrs>0?' <strong>('+hrs+'h'+(mins>0?' '+mins+'min':'')+')</strong>':' <strong>('+mins+'min)</strong>';
+    }else if(v.sunWindow.minutesLeft>=999){winLabel='☀️ Sun all day';}
+    windowHtml='<div class="sun-window"><div class="sun-window-fill" style="width:'+pct+'%"></div></div><div class="sun-window-label">'+winLabel+'</div>';
+  }
+
+  var shadowHtml='';
+  if(v.shadow&&v.shadow.inShadow&&v.shadow.shadowSource!=='night'){
+    shadowHtml='<div class="shadow-bar">🏢 Possible shadow from nearby building — score adjusted</div>';
+  }
+
+  var closedClass=v.ohResult.isOpen===false?' closed':'';
+  var unconfClass=v.confirmed?'':' unconfirmed';
+
+  return '<a class="card'+closedClass+unconfClass+'" href="'+gmUrl+'" target="_blank" rel="noopener" style="animation-delay:'+(i*50)+'ms">'+
+    '<div class="score-wrap">'+
+      '<svg viewBox="0 0 50 50">'+
+        '<circle class="tr" cx="25" cy="25" r="20"/>'+
+        '<circle class="fi" cx="25" cy="25" r="20" stroke="'+col+'" stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>'+
+      '</svg>'+
+      '<div class="score-num">'+v.score+'</div>'+
+    '</div>'+
+    '<div class="vinfo">'+
+      '<div class="vname">'+esc(v.name)+'</div>'+
+      '<div class="vmeta">'+
+        '<span class="vtag">'+v.type+'</span>'+
+        '<span>'+fmtDist(v.d)+'</span>'+
+        (lbl?'<span class="vsun">'+lbl+'</span>':'')+
+        hoursTag+cloudTag+ratingTag+confTag+
+      '</div>'+
+      windowHtml+shadowHtml+
+    '</div>'+
+    '<div class="go">↗</div>'+
+  '</a>';
+}
+
+// ── Loading UI ────────────────────────────────────────────────────────────────
+function showLoadingUI(usingGoogle,usingMapbox){
+  var venueLabel=usingGoogle?'Fetching venues from Google Places…':'Querying venues &amp; buildings…';
+  var shadowLabel=usingMapbox?'Fetching building heights &amp; shadows…':'Calculating sun scores &amp; shadows…';
+  statusBox.innerHTML='<span class="ico">☀️</span>'+
+    '<div class="loading-steps">'+
+    '<div class="load-step" id="step-weather"><span class="step-icon">·</span><span>Fetching weather…</span></div>'+
+    '<div class="load-step" id="step-venues"><span class="step-icon">·</span><span>'+venueLabel+'</span></div>'+
+    (usingMapbox?'<div class="load-step" id="step-buildings"><span class="step-icon">·</span><span>'+shadowLabel+'</span></div>':'')+
+    '<div class="load-step" id="step-scoring"><span class="step-icon">·</span><span>Calculating sun scores…</span></div>'+
+    '</div><div class="timeout-warn" id="timeoutWarn">⏳ Still working — data sources can be slow. Hang tight…</div>';
+  statusBox.classList.add('on');
+}
+function setStep(id,state){
+  var el=document.getElementById(id);if(!el)return;
+  el.classList.remove('active','done');
+  var icon=el.querySelector('.step-icon');
+  if(state==='active'){el.classList.add('active');icon.innerHTML='<div class="step-spinner"></div>';}
+  else if(state==='done'){el.classList.add('done');icon.textContent='✓';}
+  else if(state==='error'){icon.textContent='✗';el.style.color='#c0553a';}
+}
+
+// ── Main search ───────────────────────────────────────────────────────────────
+searchBtn.onclick=function(){
+  if(!lat||!lon)return;
+  searchBtn.disabled=true;searchBtn.textContent='Searching…';searchBtn.classList.add('loading');
+  resList.innerHTML='';resHeader.classList.remove('on');infoBar.classList.remove('on');legend.style.display='none';
+
+  var usingGoogle=hasGoogle();
+  var usingMapbox=hasMapbox();
+  showLoadingUI(usingGoogle,usingMapbox);
+  setStep('step-weather','active');
+  setStep('step-venues','active');
+
+  var date=getTargetDate();
+  var pos=SunCalc.getPosition(date,lat,lon);
+  var altDeg=pos.altitude*180/Math.PI;
+  var azDeg=((pos.azimuth*180/Math.PI)+360)%360;
+
+  var timeoutTimer=setTimeout(function(){var w=document.getElementById('timeoutWarn');if(w)w.classList.add('on');},8000);
+
+  // Venue fetch: Google Places or OSM
+  var venueFetch=usingGoogle
+    ?fetchGoogleVenues(lat,lon).catch(function(){showToast('Google Places failed — using OpenStreetMap');return fetchOSMVenues(lat,lon);})
+    :fetchOSMVenues(lat,lon);
+
+  Promise.all([
+    fetchWeather(lat,lon).then(function(wx){setStep('step-weather','done');return wx;}),
+    venueFetch.then(function(v){setStep('step-venues','done');return v;})
+  ]).then(function(r0){
+    var wx=r0[0],venueData=r0[1]||[];
+
+    // Building heights: Mapbox or from OSM elements
+    var buildingFetch;
+    if(usingMapbox){
+      setStep('step-buildings','active');
+      buildingFetch=fetchMapboxBuildings(lat,lon)
+        .then(function(b){setStep('step-buildings','done');return b;})
+        .catch(function(){setStep('step-buildings','done');return[];});
+    }else{
+      buildingFetch=Promise.resolve(null); // will use OSM buildings already in venueData
+    }
+
+    return buildingFetch.then(function(mapboxBuildings){
+      clearTimeout(timeoutTimer);
+      setStep('step-scoring','active');
+
+      // Info bar
+      var sunRow=altDeg>0
+        ?'<div class="info-row">☀️ &nbsp;Sun at <strong>'+Math.round(altDeg)+'°</strong> altitude · from the <strong>'+azToCompass(azDeg)+'</strong></div>'
+        :'<div class="info-row">🌑 &nbsp;Sun is <strong>below the horizon</strong> at this time</div>';
+      var wxRow=wx.label?'<div class="info-row">'+wx.emoji+' &nbsp;'+wx.label+(wx.temp!=null?' · <strong>'+wx.temp+'°C</strong>':'')+(wx.cloudPct!=null?' · '+Math.round(wx.cloudPct)+'% cloud':'')+'</div>':'';
+      var srcRow='<div class="info-row" style="font-size:0.72rem;opacity:0.6">'+
+        (usingGoogle?'📍 Venues: Google Places':'📍 Venues: OpenStreetMap')+' &nbsp;·&nbsp; '+
+        (usingMapbox?'🏢 Shadows: Mapbox':'🏢 Shadows: OSM estimate')+
+        '</div>';
+      infoBar.innerHTML=sunRow+wxRow+srcRow;infoBar.classList.add('on');
+
+      var venues=[];
+
+      if(usingGoogle&&Array.isArray(venueData)&&venueData.length&&venueData[0].location){
+        // Process Google Places results
+        var buildings=mapboxBuildings||[];
+        var seen={};
+        venueData.forEach(function(place){
+          var name=(place.displayName&&place.displayName.text)||'';
+          if(!name||seen[name])return;seen[name]=true;
+          var vLat=place.location.latitude,vLon=place.location.longitude;
+          var d=haversine(lat,lon,vLat,vLon);
+          if(d>1500)return;
+          var br=bearing(lat,lon,vLat,vLon);
+          var confirmed=place.outdoorSeating===true;
+          var shadow=checkShadow(vLat,vLon,azDeg,altDeg,buildings);
+          var sc=sunScore(altDeg,azDeg,br,wx.cloudPct,shadow.inShadow&&shadow.shadowSource!=='night');
+          if(!confirmed)sc=Math.min(sc,85);
+          var ohResult=parseGoogleHours(place,date);
+          var sunWindow=sc>0?calcSunWindow(date,lat,lon):null;
+          var types=place.types||[];
+          var type=types.indexOf('bar')>=0?'bar':types.indexOf('cafe')>=0?'cafe':'venue';
+          venues.push({name:name,type:type,d:d,score:sc,lat:vLat,lon:vLon,cloudPct:wx.cloudPct,confirmed:confirmed,shadow:shadow,ohResult:ohResult,sunWindow:sunWindow,rating:place.rating||null,ratingCount:place.userRatingCount||null});
+        });
+      }else{
+        // Process OSM results
+        var elements=Array.isArray(venueData)?venueData:[];
+        var osmBuildings=[];
+        var venueEls=[];
+        elements.forEach(function(el){
+          var tags=el.tags||{};
+          if(tags.building){
+            var bLat=el.lat||(el.center&&el.center.lat);
+            var bLon=el.lon||(el.center&&el.center.lon);
+            if(!bLat||!bLon)return;
+            var levels=parseInt(tags['building:levels'])||3;
+            var heightM=tags['building:height']?parseFloat(tags['building:height']):null;
+            osmBuildings.push({lat:bLat,lon:bLon,heightM:heightM,levels:levels,name:tags.name||null});
+          }else if(tags.amenity==='bar'||tags.amenity==='cafe'){
+            venueEls.push(el);
+          }
+        });
+        var buildings=mapboxBuildings&&mapboxBuildings.length?mapboxBuildings:osmBuildings;
+        var seen={};
+        venueEls.forEach(function(el){
+          var tags=el.tags||{};
+          var name=tags.name;if(!name||seen[name])return;seen[name]=true;
+          var vLat=el.lat||(el.center&&el.center.lat);
+          var vLon=el.lon||(el.center&&el.center.lon);
+          if(!vLat||!vLon)return;
+          var d=haversine(lat,lon,vLat,vLon);if(d>1500)return;
+          var confirmed=tags['outdoor_seating']==='yes';
+          var br=bearing(lat,lon,vLat,vLon);
+          var shadow=checkShadow(vLat,vLon,azDeg,altDeg,buildings);
+          var sc=sunScore(altDeg,azDeg,br,wx.cloudPct,shadow.inShadow&&shadow.shadowSource!=='night');
+          if(!confirmed)sc=Math.min(sc,85);
+          var ohResult=OpeningHours.check(tags['opening_hours'],date);
+          var sunWindow=sc>0?calcSunWindow(date,lat,lon):null;
+          venues.push({name:name,type:tags.amenity,d:d,score:sc,lat:vLat,lon:vLon,cloudPct:wx.cloudPct,confirmed:confirmed,shadow:shadow,ohResult:ohResult,sunWindow:sunWindow,rating:null,ratingCount:null});
+        });
+      }
+
+      setStep('step-scoring','done');
+
+      if(!venues.length){showStatus('🍻','No bars or cafés found within range. Try a different location.');done();return;}
+
+      var filtered=filterOpenOnly?venues.filter(function(v){return v.ohResult.isOpen!==false;}):venues;
+      if(!filtered.length){showStatus('🕐','No open venues right now.<br>Switch to "All venues" to see closed ones.');done();return;}
+
+      filtered.sort(function(a,b){
+        var aOpen=a.ohResult.isOpen===true?1:0,bOpen=b.ohResult.isOpen===true?1:0;
+        if(bOpen!==aOpen)return bOpen-aOpen;
+        var aConf=a.confirmed?1:0,bConf=b.confirmed?1:0;
+        if(bConf!==aConf)return bConf-aConf;
+        return b.score-a.score||a.d-b.d;
+      });
+
+      var top=filtered.slice(0,25);
+      hideStatus();
+      resHeader.classList.add('on');
+      resCount.textContent=top.length+(filterOpenOnly?' open':'')+' of '+venues.length+' found';
+      legend.style.display='flex';
+      resList.innerHTML=top.map(renderCard).join('');
+      done();
+    });
+
+  }).catch(function(){
+    clearTimeout(timeoutTimer);
+    setStep('step-venues','error');
+    showToast('Could not load data — check your connection and try again.');
+    showStatus('😞','Data failed to load.<br>Please check your internet connection.');
+    done();
+  });
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function done(){searchBtn.disabled=false;searchBtn.textContent='Find Sunny Spots 🌷';searchBtn.classList.remove('loading');}
+function showStatus(ico,msg){statusBox.innerHTML='<span class="ico">'+ico+'</span>'+msg;statusBox.classList.add('on');}
+function hideStatus(){statusBox.classList.remove('on');}
+var toastTimer;
+function showToast(msg){toast.textContent=msg;toast.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove('on');},4000);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadKeys();
+updateSetupUI();
+updateUsageUI(loadUsage());
+updateTime();
+
+// Auto-open setup if no keys yet
+if(!hasGoogle()&&!hasMapbox()){
+  setupBody.classList.add('open');
+  setupChevron.classList.add('open');
+}
+</script>
+</body>
+</html>
