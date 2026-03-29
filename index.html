@@ -340,6 +340,37 @@ header .tagline { margin-top: 7px; font-size: 0.8rem; color: var(--muted); lette
 #toast.on { transform: translateX(-50%) translateY(0); }
 
 .footer { text-align: center; font-size: 0.7rem; color: var(--muted); opacity: 0.5; margin-top: 36px; line-height: 1.7; }
+
+/* ── Empty state ── */
+#emptyState {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 16px 20px; text-align: center;
+}
+#emptyState.hidden { display: none; }
+.empty-tulips { display: flex; justify-content: center; align-items: flex-end; gap: 10px; margin-bottom: 22px; }
+.empty-tulip { transform-origin: bottom center; }
+.empty-tulip:nth-child(1) { animation: sway 3.8s ease-in-out infinite; }
+.empty-tulip:nth-child(2) { animation: sway 4.2s ease-in-out infinite 0.4s; }
+.empty-tulip:nth-child(3) { animation: sway 3.6s ease-in-out infinite 0.8s; }
+@keyframes sway {
+  0%,100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+.empty-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty-sub { font-size: 0.82rem; color: var(--muted); line-height: 1.6; max-width: 260px; }
+
+/* ── Reset button ── */
+#resetBtn {
+  display: none; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; margin-top: 14px; padding: 12px;
+  background: transparent;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; font-weight: 400; letter-spacing: 0.04em;
+  cursor: pointer; -webkit-appearance: none; transition: all 0.15s;
+}
+#resetBtn.on { display: flex; }
+#resetBtn:hover { border-color: rgba(61,139,94,0.4); color: var(--green); background: rgba(61,139,94,0.05); }
 </style>
 </head>
 <body>
@@ -432,10 +463,37 @@ header .tagline { margin-top: 7px; font-size: 0.8rem; color: var(--muted); lette
     </div>
 
     <button id="searchBtn" disabled>Find Sunny Spots 🌷</button>
+    <button id="resetBtn">↺ &nbsp;New search</button>
   </div>
 
   <div id="infoBar"></div>
   <div id="statusBox"></div>
+
+  <!-- Empty state — shown before first search -->
+  <div id="emptyState">
+    <div class="empty-tulips">
+      <!-- Tulip 1 — orange, shorter -->
+      <svg class="empty-tulip" width="44" height="90" viewBox="0 0 44 90" fill="none">
+        <line x1="22" y1="90" x2="22" y2="46" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M22 46 Q17 34 12 24 Q9 14 14 10 Q19 7 22 18 Q25 7 30 10 Q35 14 32 24 Q27 34 22 46Z" fill="#E8850A"/>
+        <path d="M15 62 Q12 56 17 53 Q22 51 22 56" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Tulip 2 — yellow, tallest, centre -->
+      <svg class="empty-tulip" width="44" height="106" viewBox="0 0 44 106" fill="none">
+        <line x1="22" y1="106" x2="22" y2="56" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M22 56 Q17 42 12 30 Q9 18 14 13 Q19 9 22 22 Q25 9 30 13 Q35 18 32 30 Q27 42 22 56Z" fill="#F7C24E"/>
+        <path d="M19 74 Q15 68 20 64 Q25 61 25 67" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Tulip 3 — green, shorter -->
+      <svg class="empty-tulip" width="44" height="90" viewBox="0 0 44 90" fill="none">
+        <line x1="22" y1="90" x2="22" y2="46" stroke="#3D8B5E" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M22 46 Q17 34 12 24 Q9 14 14 10 Q19 7 22 18 Q25 7 30 10 Q35 14 32 24 Q27 34 22 46Z" fill="#6AB98A"/>
+        <path d="M29 62 Q32 56 27 53 Q22 51 22 56" stroke="#3D8B5E" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="empty-title">Find your sunny spot</div>
+    <div class="empty-sub">Enter a location or use your current position, then tap the button to discover bars and cafés in the sun ☀️</div>
+  </div>
 
   <div id="resHeader">
     <h2>Sunny spots nearby</h2>
@@ -783,7 +841,9 @@ var locInput=document.getElementById('locInput'),dropdown=document.getElementByI
     resList=document.getElementById('resList'),toast=document.getElementById('toast'),
     filterAll=document.getElementById('filterAll'),filterOpen=document.getElementById('filterOpen'),
     legend=document.getElementById('legend'),infoBtn=document.getElementById('infoBtn'),
-    scoreExplain=document.getElementById('scoreExplain');
+    scoreExplain=document.getElementById('scoreExplain'),
+    emptyState=document.getElementById('emptyState'),
+    resetBtn=document.getElementById('resetBtn');
 
 infoBtn.onclick=function(){
   var on=scoreExplain.classList.toggle('on');
@@ -1188,6 +1248,8 @@ searchBtn.onclick=function(){
   if(!lat||!lon)return;
   searchBtn.disabled=true;searchBtn.textContent='Searching…';searchBtn.classList.add('loading');
   resList.innerHTML='';resHeader.classList.remove('on');infoBar.classList.remove('on');legend.style.display='none';
+  emptyState.classList.add('hidden');
+  resetBtn.classList.add('on');
 
   var usingGoogle=hasGoogle();
   var usingMapbox=hasMapbox();
@@ -1352,6 +1414,25 @@ if(!hasGoogle()&&!hasMapbox()){
   setupBody.classList.add('open');
   setupChevron.classList.add('open');
 }
+
+// ── Reset button ──────────────────────────────────────────────────────────────
+var resetBtn=document.getElementById('resetBtn');
+var emptyState=document.getElementById('emptyState');
+
+resetBtn.onclick=function(){
+  resList.innerHTML='';
+  resHeader.classList.remove('on');
+  infoBar.classList.remove('on');
+  legend.style.display='none';
+  hideStatus();
+  scoreExplain.classList.remove('on');
+  resetBtn.classList.remove('on');
+  emptyState.classList.remove('hidden');
+  locInput.value='';
+  lat=null;lon=null;
+  searchBtn.disabled=true;
+  hourOffset=0;updateTime();
+};
 </script>
 </body>
 </html>
